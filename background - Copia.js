@@ -28,7 +28,7 @@ function _load(keys,items){
 		chrome.browserAction.setIcon({path: "img/icon.png"});
 
 	/*if(!items.map)
-		window.map = new pageMap();
+		window.map = new PageMap();
 	else
 		window.map = items.map;*/
 
@@ -54,7 +54,7 @@ function _load(keys,items){
 // Esecuzione
 (function(){
 
-	window.map = new pageMap();
+	window.map = new PageMap();
 	//window.whiteList = new WhiteList();
 	
 	console.log("main: null");

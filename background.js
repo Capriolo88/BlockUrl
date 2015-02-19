@@ -6,13 +6,15 @@ window.activate = null;
 window.async = null;
 window.map = null;
 window.whiteList = null;
+window.malware = null;
+window.phishing = null;
 var deferred = $.Deferred();
 var objHttp = createXMLHttp(null);
 
 
 // Funzioni globali
 function load(){
-	var keys = ['activate','whiteList','async'];
+	var keys = ['activate','malware','phishing','async'];
 	chrome.storage.local.get(keys, function(items){
 		deferred.resolve(keys,items);
 	});
@@ -28,9 +30,9 @@ function _load(keys,items){
 		chrome.browserAction.setIcon({path: "img/icon.png"});
 
 	/*if(!items.map)
-		window.map = new pageMap();
+		window.map = new PageMap();
 	else
-		window.map = items.map;*/
+		window.map = items.map;
 
 	if(!items.whiteList){
 		console.log("new WhiteList()");
@@ -38,6 +40,17 @@ function _load(keys,items){
 	} else {
 		console.log('caricata whiteList');
 		window.whiteList = new WhiteList(items.whiteList);
+	}*/
+	if(!items.malware){
+		window.malware = new GoogList();
+	} else {
+		window.malware = new GoogList(items.malware);
+	}
+
+	if(!items.phishing){
+		window.phishing = new GoogList();
+	} else {
+		window.phishing = new GoogList(items.phishing);
 	}
 
 	if(items.async == null || items.async == undefined){
@@ -54,8 +67,8 @@ function _load(keys,items){
 // Esecuzione
 (function(){
 
-	window.map = new pageMap();
-	//window.whiteList = new WhiteList();
+	window.map = new PageMap();
+	window.whiteList = new WhiteList();
 	
 	console.log("main: null");
 	deferred.done(_load);
@@ -109,9 +122,7 @@ function _load(keys,items){
 		if(!window.activate)
 			return;
 
-		if(!window.whiteList.cleaned){
-			window.whiteList.clean();
-		}
+
 			
 
 		var url = details.url;
@@ -146,20 +157,20 @@ function _load(keys,items){
 		}
 	});
 
-
+	// Message utilizzato per sincronizzare task asincroni
 	chrome.runtime.onMessage.addListener(function(message,sender,sendResponse){
 		
 		console.log("ricevuto messaggio: "+message.command);
-
+		var id, url;
 		if(message.command == 'getUrl'){
-			var id = sender.tab.id;
-			var url = window.map.getUrl(id);
+			id = sender.tab.id;
+			url = window.map.getUrl(id);
 			
 			console.log(url);
 			sendResponse({url: url});
 		} else if(message.command == 'goon'){
-			var id = sender.tab.id;
-			var url = window.map.getUrl(id);
+			id = sender.tab.id;
+			url = window.map.getUrl(id);
 
 			window.map.check(id,true);
 			sendResponse({r:'ok'});
@@ -186,19 +197,19 @@ function _load(keys,items){
 
 	chrome.windows.onRemoved.addListener(function(windowId){
 		
-			console.log('onRemoved Salvata whiteList');
-			window.whiteList.cleaned = false;
-			//chrome.storage.local.remove('whiteList');
-			chrome.storage.local.set({'whiteList' : window.whiteList});
+			//console.log('onRemoved Salvata whiteList');
+			//window.whiteList.cleaned = false;
+			////chrome.storage.local.remove('whiteList');
+			//chrome.storage.local.set({'whiteList' : window.whiteList});
 
 	});
 
-
-	chrome.storage.onChanged.addListener(function(changes, areaName){
-		if(changes.async){
-			window.async = changes.async.newValue;
-		}
-	});
+	// Inutile, richieste sempre async
+	//chrome.storage.onChanged.addListener(function(changes, areaName){
+	//	if(changes.async){
+	//		window.async = changes.async.newValue;
+	//	}
+	//});
 
 
 })();
