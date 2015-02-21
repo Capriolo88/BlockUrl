@@ -18,8 +18,11 @@
       "lib/Long.js",
       "lib/ByteBufferAB.js",
       "lib/ProtoBuf.js",
-      "lib/class.js",
-      "lib/request.js",
+      "lib/Utility.js",
+      "lib/Class.js",
+      "lib/Request.js",
+      "lib/GoogSBLookup.js",
+      "lib/GoogSBv3.js",
       "background.js"
     ],
     "persistent": true
