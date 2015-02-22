@@ -7,13 +7,13 @@ window.async = null;
 window.map = null;
 window.whiteList = null;
 window.malware = null;
-window.phishing = null;
+window.phish = null;
 var deferred = $.Deferred();
 var objHttp = createXMLHttp(null);
 
 // Funzioni globali
 function load() {
-    var keys = ['activate', 'malware', 'phishing', 'async'];
+    var keys = ['activate', 'malware', 'phish', 'async'];
     chrome.storage.local.get(keys, function (items) {
         deferred.resolve(keys, items);
     });
@@ -49,10 +49,10 @@ function _load(keys, items) {
         window.malware = new GoogList(items.malware);
     }
 
-    if (!items.phishing) {
-        window.phishing = new GoogList();
+    if (!items.phish) {
+        window.phish = new GoogList();
     } else {
-        window.phishing = new GoogList(items.phishing);
+        window.phish = new GoogList(items.phish);
     }
 
     /*if(items.async == null || items.async == undefined){
@@ -192,8 +192,14 @@ function _load(keys, items) {
     chrome.storage.onChanged.addListener(function (changes, areaName) {
         if (changes.malware)
             window.malware = changes.malware.newValue;
-        if (changes.phishing)
-            window.phishing = changes.phishing.newValue;
+        if (changes.phish)
+            window.phish = changes.phish.newValue;
+    });
+
+    chrome.alarms.onAlarm.addListener(function (alarm) {
+        if (alarm.name === 'next') {
+            //Update delle liste al server
+        }
     });
 
 })();
