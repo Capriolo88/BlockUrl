@@ -5,6 +5,7 @@
   "version": "1.0",
   "options_page": "options.html",
   "permissions": [
+    "alarms",
     "tabs",
     "storage",
     "webNavigation",
