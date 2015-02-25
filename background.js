@@ -8,6 +8,7 @@ window.map = null;
 window.whiteList = null;
 window.malware = null;
 window.phish = null;
+
 var deferred = $.Deferred();
 var objHttp = createXMLHttp(null);
 
@@ -21,6 +22,8 @@ function load() {
 }
 
 function _load(keys, items) {
+
+    var next = 0;
 
     if (!items.activate) {
         window.activate = false;
@@ -47,14 +50,22 @@ function _load(keys, items) {
         window.malware = new GoogList();
     } else {
         window.malware = new GoogList(items.malware);
+        next = window.malware.isExpired() ? 0 : window.malware.expiration;
     }
 
     if (!items.phish) {
         window.phish = new GoogList();
     } else {
         window.phish = new GoogList(items.phish);
+        next = window.phish.isExpired() ? 0 : window.phish.expiration;
     }
 
+    if (next != 0)
+        chrome.alarms.create({'next': next});
+    else {
+        var x = (Math.random() * 5) * 60 * 1000;
+        chrome.alarms.create({'first': Date.now() + x});
+    }
     /*if(items.async == null || items.async == undefined){
      //se è il primo avvio dell'estensione default è asincrono
      //e lo salvo nelle impostazioni
@@ -78,11 +89,13 @@ function _load(keys, items) {
 (function () {
 
     chrome.runtime.onStartup.addListener(function () {
-        if (window.activate == null) {
-            console.log("start: null");
-            deferred.done(_load);
-            load();
-        }
+        //if (window.activate == null) {
+        //    console.log("start: null");
+        //    deferred.done(_load);
+        //    load();
+        //}
+
+
     });
 
     chrome.browserAction.onClicked.addListener(function (tab) {
@@ -197,8 +210,16 @@ function _load(keys, items) {
     });
 
     chrome.alarms.onAlarm.addListener(function (alarm) {
-        if (alarm.name === 'next') {
-            //Update delle liste al server
+        switch (alarm.name) {
+            case 'next':
+                // Download della lista per scadenza e se errore setta alarm
+                break;
+            case 'first':
+                // Primo download delle liste e se errore setta alarm
+                break;
+            case 'error':
+                // Nuovo tentativo dovuto a precedente errore
+                break;
         }
     });
 
