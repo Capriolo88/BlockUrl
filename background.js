@@ -1,5 +1,5 @@
 // JavaScript Document
-'use strict'
+'use strict';
 
 // Variabili globali
 window.activate = null;
@@ -16,12 +16,12 @@ var objHttp = createXMLHttp(null);
 function load() {
     var keys = ['activate', 'malware', 'phish', 'async'];
     chrome.storage.local.get(keys, function (items) {
-        deferred.resolve(keys, items);
+        deferred.resolve(items);
     });
     return deferred.promise();
 }
 
-function _load(keys, items) {
+function _load(items) {
 
     var next = 0;
 
