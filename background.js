@@ -61,10 +61,11 @@ function _load(items) {
     }
 
     if (next != 0)
-        chrome.alarms.create({'next': next});
+        chrome.alarms.create('next', {'when': next});
     else {
         var x = (Math.random() * 5) * 60 * 1000;
-        chrome.alarms.create({'first': Date.now() + x});
+        x = 1000 * 5;
+        chrome.alarms.create('first', {'when': Date.now() + x});
     }
     /*if(items.async == null || items.async == undefined){
      //se è il primo avvio dell'estensione default è asincrono
@@ -215,6 +216,15 @@ function _load(items) {
                 // Download della lista per scadenza e se errore setta alarm
                 break;
             case 'first':
+                console.log("fired alarm first");
+                var ret = downloadLists();
+                if (typeof ret === 'number') {
+                    console.log('ritrasmissione: ' + ret);
+                    //gestisci ritrasmissione
+                } else if (!ret) {
+                    console.log('errore nel parser');
+                } else
+                    console.log('tutto ok');
                 // Primo download delle liste e se errore setta alarm
                 break;
             case 'error':
