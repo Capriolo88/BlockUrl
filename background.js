@@ -9,71 +9,80 @@ window.whiteList = null;
 window.malware = null;
 window.phish = null;
 
-var deferred = $.Deferred();
-var objHttp = createXMLHttp(null);
+//var deferred = $.Deferred();
 
 // Funzioni globali
+
+
 function load() {
-    var keys = ['activate', 'malware', 'phish', 'async'];
-    chrome.storage.local.get(keys, function (items) {
-        deferred.resolve(items);
+
+    function _load() {
+        var deferred = Q.defer(),
+            keys = ['activate', 'malware', 'phish', 'async'];
+        chrome.storage.local.get(keys, function (items) {
+            console.log('caricato');
+            deferred.resolve(items);
+        });
+        return deferred.promise;
+    }
+
+    console.log('chiamo _load');
+    _load().then(function (items) {
+        var next = 0;
+
+        console.log(JSON.stringify(items));
+
+        if (!items.activate) {
+            window.activate = false;
+            chrome.browserAction.setIcon({path: "img/icon_off.png"});
+        } else {
+            window.activate = true;
+            chrome.browserAction.setIcon({path: "img/icon.png"});
+        }
+
+        /*if(!items.map)
+         window.map = new PageMap();
+         else
+         window.map = items.map;
+
+         if(!items.whiteList){
+         console.log("new WhiteList()");
+         window.whiteList = new WhiteList();
+         } else {
+         console.log('caricata whiteList');
+         window.whiteList = new WhiteList(items.whiteList);
+         }*/
+
+        if (!items.malware) {
+            window.malware = new GoogList();
+        } else {
+            window.malware = new GoogList(items.malware);
+            next = window.malware.isExpired() ? 0 : window.malware.expiration;
+        }
+
+        if (!items.phish) {
+            window.phish = new GoogList();
+        } else {
+            window.phish = new GoogList(items.phish);
+            next = window.phish.isExpired() ? 0 : window.phish.expiration;
+        }
+
+        if (next != 0)
+            chrome.alarms.create('next', {'when': next});
+        else {
+            var x = (Math.random() * 5) * 60 * 1000;
+            x = 1000 * 5;
+            chrome.alarms.create('first', {'when': Date.now() + x});
+        }
+        /*if(items.async == null || items.async == undefined){
+         //se è il primo avvio dell'estensione default è asincrono
+         //e lo salvo nelle impostazioni
+         chrome.storage.local.set({'async': true});
+         } else {
+         window.async = items.async;
+         }*/
     });
-    return deferred.promise();
-}
-
-function _load(items) {
-
-    var next = 0;
-
-    if (!items.activate) {
-        window.activate = false;
-        chrome.browserAction.setIcon({path: "img/icon_off.png"});
-    } else {
-        window.activate = true;
-        chrome.browserAction.setIcon({path: "img/icon.png"});
-    }
-
-    /*if(!items.map)
-     window.map = new PageMap();
-     else
-     window.map = items.map;
-
-     if(!items.whiteList){
-     console.log("new WhiteList()");
-     window.whiteList = new WhiteList();
-     } else {
-     console.log('caricata whiteList');
-     window.whiteList = new WhiteList(items.whiteList);
-     }*/
-
-    if (!items.malware) {
-        window.malware = new GoogList();
-    } else {
-        window.malware = new GoogList(items.malware);
-        next = window.malware.isExpired() ? 0 : window.malware.expiration;
-    }
-
-    if (!items.phish) {
-        window.phish = new GoogList();
-    } else {
-        window.phish = new GoogList(items.phish);
-        next = window.phish.isExpired() ? 0 : window.phish.expiration;
-    }
-
-    if (next != 0)
-        chrome.alarms.create('next', {'when': next});
-    else {
-        var x = (Math.random() * 5) * 60 * 1000;
-        x = 1000 * 5;
-        chrome.alarms.create('first', {'when': Date.now() + x});
-    }
-    /*if(items.async == null || items.async == undefined){
-     //se è il primo avvio dell'estensione default è asincrono
-     //e lo salvo nelle impostazioni
-     chrome.storage.local.set({'async': true});
-     } else {
-     window.async = items.async;
-     }*/
+    console.log('esco load');
 }
 
 // Esecuzione
@@ -82,7 +91,6 @@ function _load(items) {
     window.whiteList = new WhiteList();
 
     console.log("main: null");
-    deferred.done(_load);
     load();
 })();
 
@@ -124,38 +132,38 @@ function _load(items) {
     //onBeforeNavigate
     //onCommitted
     chrome.webNavigation.onBeforeNavigate.addListener(function (details) {
-        if (!window.activate)
-            return;
-
-        var url = details.url;
-        /*console.log('onCommitted transitionType: '+details.transitionType+
-         '\ntransitionQualifiers: '+details.transitionQualifiers);*/
-
-        console.log('onBeforeNavigate url: ' + url);
-        if (skipLookup(url, window.whiteList))
-            return;
-
-        if (window.map.isChecked(details.tabId)) {
-
-            console.log('onBeforeNavigate: isChecked');
-        } else {
-            var res = lookup(objHttp, url);
-            console.log("\'" + url + "\' sito malevolo? " + isBadSite(res));
-
-            var tabId = details.tabId;
-            window.map.set(tabId, url);
-            if (isBadSite(res)) {
-                //var type = details.type;
-                //var time = details.timeStamp;
-                console.log('onBeforeNavigate, tabId: ' + tabId + " url: " + url);
-                //window.map.set(tabId,url);
-
-                chrome.tabs.update(tabId, {url: "attenzione.html"});
-            } else {
-                window.map.check(tabId, true);
-                window.whiteList.set(url);
-            }
-        }
+        //if (!window.activate)
+        //    return;
+        //
+        //var url = details.url;
+        ///*console.log('onCommitted transitionType: '+details.transitionType+
+        // '\ntransitionQualifiers: '+details.transitionQualifiers);*/
+        //
+        //console.log('onBeforeNavigate url: ' + url);
+        //if (skipLookup(url, window.whiteList))
+        //    return;
+        //
+        //if (window.map.isChecked(details.tabId)) {
+        //
+        //    console.log('onBeforeNavigate: isChecked');
+        //} else {
+        //    var res = lookup(objHttp, url);
+        //    console.log("\'" + url + "\' sito malevolo? " + isBadSite(res));
+        //
+        //    var tabId = details.tabId;
+        //    window.map.set(tabId, url);
+        //    if (isBadSite(res)) {
+        //        //var type = details.type;
+        //        //var time = details.timeStamp;
+        //        console.log('onBeforeNavigate, tabId: ' + tabId + " url: " + url);
+        //        //window.map.set(tabId,url);
+        //
+        //        chrome.tabs.update(tabId, {url: "attenzione.html"});
+        //    } else {
+        //        window.map.check(tabId, true);
+        //        window.whiteList.set(url);
+        //    }
+        //}
     });
 
     // Message utilizzato per sincronizzare task asincroni
@@ -217,6 +225,8 @@ function _load(items) {
                 break;
             case 'first':
                 console.log("fired alarm first");
+                if (!window.activate)
+                    return;
                 var ret = downloadLists();
                 if (typeof ret === 'number') {
                     console.log('ritrasmissione: ' + ret);
