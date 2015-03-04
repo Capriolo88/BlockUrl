@@ -200,16 +200,22 @@ function load() {
                     console.log('ul - ' + message.name + ' - ' + message.status);
                     if (window.err)
                         return;
-
+                    var l, app;
                     switch (message.status) {
                         case 'ok':
                             delete window.timeout[message.name];
                             if (Object.keys(window.timeout).length == 0) {
                                 resetError();
                                 //aggiorna tutte le liste
-                                for (var l of getAppList()) {
-                                    // salva la lista l
+                                app = {};
+                                var exp;
+                                for (l of getAppList()) {
+                                    app[l.name] = l;
+                                    exp = l.expiration;
                                 }
+                                //chrome.storage.local.set(app);
+                                //deleteLists();
+                                //chrome.alarms.create({'next': {'when': Date.now() + exp}});
                             }
                             break;
 
@@ -224,14 +230,18 @@ function load() {
                                 window.err = false;
                                 console.log(window.err);
                             }, time);
-                            //setta alarm 'error' con delay
-                            for (var l of getAppList()) {
-                                // salva la lista l
-                            }
+                            //setta alarm 'next' con delay per errore in risposta
+                            //chrome.alarms.create({'next': {'when': Date.now() + delay}});
+                            app = {};
+                            for (l of getAppList())
+                                app[l.name] = l;
+                            //chrome.storage.local.set(app);
+                            //deleteLists();
                             break;
 
                         default :
                             // parse error
+                            deleteLists();
                             break;
                     }
                     break;
@@ -287,6 +297,7 @@ function load() {
                 if (typeof ret === 'number') {
                     console.log('ritrasmissione: ' + ret);
                     //gestisci ritrasmissione errore
+                    //chrome.alarms.create({'next': {'when': Date.now() + ret}});
                 } else if (!ret) {
                     console.log('errore nel parser');
                 } else {
