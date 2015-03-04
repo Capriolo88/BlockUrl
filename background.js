@@ -1,5 +1,5 @@
 // JavaScript Document
-'use strict';
+'use strict'
 
 // Variabili globali
 window.activate = null;
@@ -8,6 +8,8 @@ window.map = null;
 window.whiteList = null;
 window.malware = null;
 window.phish = null;
+window.err = false;
+window.timeout = null;
 
 //var deferred = $.Deferred();
 
@@ -54,14 +56,14 @@ function load() {
          }*/
 
         if (!items.malware) {
-            window.malware = new GoogList();
+            window.malware = new GoogList('malware');
         } else {
             window.malware = new GoogList(items.malware);
             next = window.malware.isExpired() ? 0 : window.malware.expiration;
         }
 
         if (!items.phish) {
-            window.phish = new GoogList();
+            window.phish = new GoogList('phish');
         } else {
             window.phish = new GoogList(items.phish);
             next = window.phish.isExpired() ? 0 : window.phish.expiration;
@@ -169,22 +171,74 @@ function load() {
     // Message utilizzato per sincronizzare task asincroni
     chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
-        console.log("ricevuto messaggio: " + message.command);
-        var id, url;
-        if (message.command == 'getUrl') {
-            id = sender.tab.id;
-            url = window.map.getUrl(id);
+            console.log("ricevuto messaggio: " + message.command);
+            var id, url;
+            switch (message.command) {
+                case 'getUrl':
+                    id = sender.tab.id;
+                    url = window.map.getUrl(id);
 
-            console.log(url);
-            sendResponse({url: url});
-        } else if (message.command == 'goon') {
-            id = sender.tab.id;
-            url = window.map.getUrl(id);
+                    console.log(url);
+                    sendResponse({url: url});
+                    break;
 
-            window.map.check(id, true);
-            sendResponse({r: 'ok'});
+                case 'goon':
+                    id = sender.tab.id;
+                    url = window.map.getUrl(id);
+
+                    window.map.check(id, true);
+                    sendResponse({r: 'ok'});
+                    break;
+
+                case 'timeout':
+                    if (window.timeout == null)
+                        window.timeout = {};
+                    window.timeout[message.name] = message.id;
+                    break;
+
+                case 'updatelist':
+                    console.log('ul - ' + message.name + ' - ' + message.status);
+                    if (window.err)
+                        return;
+
+                    switch (message.status) {
+                        case 'ok':
+                            delete window.timeout[message.name];
+                            if (Object.keys(window.timeout).length == 0) {
+                                resetError();
+                                //aggiorna tutte le liste
+                                for (var l of getAppList()) {
+                                    // salva la lista l
+                                }
+                            }
+                            break;
+
+                        case 'request error':
+                            window.err = true;
+                            var delay = getError('request error');
+                            delete window.timeout[message.name];
+                            for (var o of window.timeout)
+                                clearTimeout(o);
+                            var time = errorState < 2 ? 40000 : 120000;
+                            setTimeout(function () {
+                                window.err = false;
+                                console.log(window.err);
+                            }, time);
+                            //setta alarm 'error' con delay
+                            for (var l of getAppList()) {
+                                // salva la lista l
+                            }
+                            break;
+
+                        default :
+                            // parse error
+                            break;
+                    }
+                    break;
+            }
         }
-    });
+    )
+    ;
 
     chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
         if (changeInfo.status == 'complete')
@@ -216,6 +270,7 @@ function load() {
             window.malware = changes.malware.newValue;
         if (changes.phish)
             window.phish = changes.phish.newValue;
+        console.log(JSON.stringify(changes));
     });
 
     chrome.alarms.onAlarm.addListener(function (alarm) {
@@ -224,18 +279,19 @@ function load() {
                 // Download della lista per scadenza e se errore setta alarm
                 break;
             case 'first':
+                // Primo download delle liste e se errore setta alarm
                 console.log("fired alarm first");
                 if (!window.activate)
                     return;
                 var ret = downloadLists();
                 if (typeof ret === 'number') {
                     console.log('ritrasmissione: ' + ret);
-                    //gestisci ritrasmissione
+                    //gestisci ritrasmissione errore
                 } else if (!ret) {
                     console.log('errore nel parser');
-                } else
-                    console.log('tutto ok');
-                // Primo download delle liste e se errore setta alarm
+                } else {
+                    // In attesa di messaggi
+                }
                 break;
             case 'error':
                 // Nuovo tentativo dovuto a precedente errore
