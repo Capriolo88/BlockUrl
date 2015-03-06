@@ -30,9 +30,9 @@ function load() {
 
     console.log('chiamo _load');
     _load().then(function (items) {
-        var next = 0;
+        var next = -1;
 
-        console.log(JSON.stringify(items));
+        console.log(items);
 
         if (!items.activate) {
             window.activate = false;
@@ -59,17 +59,17 @@ function load() {
             window.malware = new GoogList('malware');
         } else {
             window.malware = new GoogList(items.malware);
-            next = window.malware.isExpired() ? 0 : window.malware.expiration;
+            next = window.malware.isExpired() ? 1000 : window.malware.expiration;
         }
 
         if (!items.phish) {
             window.phish = new GoogList('phish');
         } else {
             window.phish = new GoogList(items.phish);
-            next = window.phish.isExpired() ? 0 : window.phish.expiration;
+            next = window.phish.isExpired() ? 1000 : window.phish.expiration;
         }
 
-        if (next != 0)
+        if (next != -1)
             chrome.alarms.create('next', {'when': next});
         else {
             var x = (Math.random() * 5) * 60 * 1000;
@@ -171,7 +171,7 @@ function load() {
     // Message utilizzato per sincronizzare task asincroni
     chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
-            console.log("ricevuto messaggio: " + message.command);
+            console.log("ricevuto messaggio: " + JSON.stringify(message));
             var id, url;
             switch (message.command) {
                 case 'getUrl':
@@ -200,21 +200,21 @@ function load() {
                     console.log('ul - ' + message.name + ' - ' + message.status);
                     if (window.err)
                         return;
-                    var l, app;
+                    var app = {}, l;
                     switch (message.status) {
                         case 'ok':
                             delete window.timeout[message.name];
+                            //getAppList(message.name).deleteAppList();
                             if (Object.keys(window.timeout).length == 0) {
                                 resetError();
                                 //aggiorna tutte le liste
-                                app = {};
                                 var exp;
                                 for (l of getAppList()) {
-                                    app[l.name] = l;
+                                    app[l.name] = l.getSerializable();
                                     exp = l.expiration;
+                                    deleteLists(l.name);
                                 }
-                                //chrome.storage.local.set(app);
-                                //deleteLists();
+                                chrome.storage.local.set(app);
                                 //chrome.alarms.create({'next': {'when': Date.now() + exp}});
                             }
                             break;
@@ -232,11 +232,11 @@ function load() {
                             }, time);
                             //setta alarm 'next' con delay per errore in risposta
                             //chrome.alarms.create({'next': {'when': Date.now() + delay}});
-                            app = {};
-                            for (l of getAppList())
-                                app[l.name] = l;
+                            for (l of getAppList()) {
+                                app[l.name] = l.getSerializable();
+                                deleteLists(l.name);
+                            }
                             //chrome.storage.local.set(app);
-                            //deleteLists();
                             break;
 
                         default :
@@ -276,11 +276,10 @@ function load() {
 
     // Inutile, richieste sempre async
     chrome.storage.onChanged.addListener(function (changes, areaName) {
-        if (changes.malware)
-            window.malware = changes.malware.newValue;
-        if (changes.phish)
-            window.phish = changes.phish.newValue;
-        console.log(JSON.stringify(changes));
+        if (changes.malware && window.malware)
+            window.malware.loadFrom(changes.malware.newValue);
+        if (changes.phish && window.phish)
+            window.phish.loadFrom(changes.phish.newValue);
     });
 
     chrome.alarms.onAlarm.addListener(function (alarm) {
