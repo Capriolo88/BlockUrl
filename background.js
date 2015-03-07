@@ -210,7 +210,7 @@ function load() {
                                 //aggiorna tutte le liste
                                 var exp;
                                 for (l of getAppList()) {
-                                    app[l.name] = l.getSerializable();
+                                    app[l.name] = l.getSerializableObj();
                                     exp = l.expiration;
                                     deleteLists(l.name);
                                 }
@@ -233,7 +233,7 @@ function load() {
                             //setta alarm 'next' con delay per errore in risposta
                             //chrome.alarms.create({'next': {'when': Date.now() + delay}});
                             for (l of getAppList()) {
-                                app[l.name] = l.getSerializable();
+                                app[l.name] = l.getSerializableObj();
                                 deleteLists(l.name);
                             }
                             //chrome.storage.local.set(app);
