@@ -187,7 +187,6 @@ function load() {
                 case 'getUrl':
                     id = sender.tab.id;
                     url = window.map.getUrl(id);
-
                     console.log(url);
                     sendResponse({url: url});
                     break;
@@ -195,7 +194,6 @@ function load() {
                 case 'goon':
                     id = sender.tab.id;
                     url = window.map.getUrl(id);
-
                     window.map.check(id, true);
                     sendResponse({r: 'ok'});
                     break;
@@ -225,7 +223,7 @@ function load() {
                                     exp = l.expiration;
                                     //deleteLists(l.name);
                                 }
-                                chrome.storage.local.set(app);
+                                //chrome.storage.local.set(app);
                             }
                             break;
 
