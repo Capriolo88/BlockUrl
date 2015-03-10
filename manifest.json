@@ -14,6 +14,7 @@
   ],
   "background": {
     "scripts": [
+      "lib/sizeof.js",
       "lib/q.js",
       "lib/Long.js",
       "lib/ByteBufferAB.js",
@@ -21,8 +22,8 @@
       "lib/Utility.js",
       "lib/Class.js",
       "lib/Request.js",
-      "lib/GoogSBLookup.js",
       "lib/GoogSBv3.js",
+      "lib/GoogSBLookup.js",
       "background.js"
     ],
     "persistent": true

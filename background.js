@@ -21,6 +21,9 @@ function load() {
     function _load() {
         var deferred = Q.defer(),
             keys = ['activate', 'malware', 'phish', 'async'];
+
+        chrome.storage.local.remove(['malware', 'phish']);
+
         chrome.storage.local.get(keys, function (items) {
             console.log('caricato');
             deferred.resolve(items);
@@ -83,8 +86,15 @@ function load() {
          } else {
          window.async = items.async;
          }*/
+
+        var a = 'http://3279880203/blah';
+        console.log(getCanonicalizedURL(a));
+
+
     });
     console.log('esco load');
+
+
 }
 
 // Esecuzione
@@ -210,12 +220,12 @@ function load() {
                                 //aggiorna tutte le liste
                                 var exp;
                                 for (l of getAppList()) {
+                                    console.log(l);
                                     app[l.name] = l.getSerializableObj();
                                     exp = l.expiration;
-                                    deleteLists(l.name);
+                                    //deleteLists(l.name);
                                 }
                                 chrome.storage.local.set(app);
-                                //chrome.alarms.create({'next': {'when': Date.now() + exp}});
                             }
                             break;
 
@@ -225,7 +235,7 @@ function load() {
                             delete window.timeout[message.name];
                             for (var o of window.timeout)
                                 clearTimeout(o);
-                            var time = errorState < 2 ? 40000 : 120000;
+                            var time = ERROR_STATE < 2 ? 40000 : 120000;
                             setTimeout(function () {
                                 window.err = false;
                                 console.log(window.err);
